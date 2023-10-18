@@ -9,11 +9,6 @@ const sheetName = createSheetNameByMonthYear();
 let spreadsheet = SpreadsheetApp.openById(SSID);
 let sheet = spreadsheet.getSheetByName(sheetName);
 
-if (sheet === null) {
-  addNewSheet(sheetName);
-  sheet = spreadsheet.getSheetByName(sheetName);
-}
-
 function initSheet() {
   const sheetTemplateName = "template";
   const sheetTemplate =
@@ -79,6 +74,10 @@ function doPost(e) {
     switch (command) {
       case "/start":
         initSheet();
+        if (sheet === null) {
+          addNewSheet(sheetName);
+          sheet = spreadsheet.getSheetByName(sheetName);
+        }
         let text1 =
           "Thiết lập bot thành công! Gõ '/help' để xem gợi ý các lệnh.";
         sendText(id, text1);
@@ -150,10 +149,29 @@ function report(data) {
   }
 
   const month = textArray[1];
-  // const year = textArray[2];
-  const total = sheet.getRange("I1").getValue();
+  const year = textArray[2];
+  const sheetName = `${month}/${year}`
 
-  sendText(id, `Tổng chi tiêu tháng ${month} là: ${total}`);
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (sheet === null) {
+    sendText(id, `Bẳng chi tiêu ko tồn tại hoặc đã xoá!!!`);
+    return
+  }
+
+  const total = sheet.getRange("I1").getValue();
+  const totalFormat = formatNumber(total)
+
+
+  sendText(id, `Tổng chi tiêu ${sheetName} là: ${totalFormat}`);
+}
+
+function formatNumber(number) {
+    const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'VND',
+  });
+
+  return formatter.format(number)
 }
 
 function sendText(chatid, text, replymarkup) {
@@ -194,10 +212,4 @@ function uniqueList() {
   //   let SumifFormula = "Sumif(E:E,F" + i + ",C:C)"
   //   sheet.getRange(i, 6).setFormula(SumifFormula)
   // }
-}
-
-function test() {
-  const val = SpreadsheetApp.openById(SSID).getSheetByName("18/10/2024");
-
-  Logger.log(val);
 }
